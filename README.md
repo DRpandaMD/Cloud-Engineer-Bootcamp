@@ -1,14 +1,18 @@
 # Cloud-Engineer-Bootcamp
 
-My repo and notes for the Linux Foundation Cloud Engineer Bootcamp
+## Disclaimer
 
-Most of the information in here is sourced from the hardworking people at the Linux Foundation
+*This is intended to be a **learning** aid.  Material here is either directly source from Linux Foundation Training or paraphrased or my own personal input. (Depending on topic and my own personal experience).  This also serves a personal consolidated reference as I take notes and go over labs and figure out what worked and what didn't work for me.  Please use at your own discretion.* 
 
-I will include additional stuff that I found useful and personal dialoge with my owne personal experience while go through this course.
+* My repo and notes for the Linux Foundation Cloud Engineer Bootcamp
 
-This will NOT have everything they provided in it.
+* Most of the information in here is sourced from the hardworking people at the Linux Foundation
 
-This is just to be used as a study aid for myself and whom everelse finds this type of centralized, with commentary helpful.
+* I will include additional stuff that I found useful and personal dialogs with my own personal experience while go through this course.
+
+* This will NOT have everything they provided in it.
+
+* This is just to be used as a study aid for myself and whom ever else finds this type of centralized, with commentary helpful.
 
 ## Navigation
 
