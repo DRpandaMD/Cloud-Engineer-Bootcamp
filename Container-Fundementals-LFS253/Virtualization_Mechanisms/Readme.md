@@ -72,6 +72,8 @@ FreeBSD jails mainly aim at three goals:
 
 FreeBSD jail allows for the partitioning of a FreeBSD system into many independent systems, called jails. They share the same kernel, but virtualize the system’s files and resources for improved security and administration through clean isolation between services.
 
+FreeBSD jails is a mechanism that also may be used to prevent a chroot type of attack.
+
 
 ## Solaris Zones 
 
@@ -106,3 +108,13 @@ LXC combines the kernel's cgroups and support for isolated namespaces to provide
 * Linux Containers, is a mechanism implementing OS-level virtualization; it was first introduced in 2008 on Linux systems
 
 * LXC allows multiple isolated systems to run on a single Linux host, using chroot and cgroups, together with namespace isolation features of the Linux kernel to limit resources, set priorities, and isolate processes, the filesystem, network and users from the host operating system
+
+## Systemd-nspawn
+
+[sytemd-nspawn wikik](https://wiki.archlinux.org/index.php/Systemd-nspawn)
+
+systemd-nspawn is like the chroot command, but it is a chroot on steroids.
+
+systemd-nspawn may be used to run a command or OS in a light-weight namespace container. It is more powerful than chroot since it fully virtualizes the file system hierarchy, as well as the process tree, the various IPC subsystems and the host and domain name.
+
+Systemd-nspawn may be used to run a simple script or boot an entire Linux-like operating system in a container. Systemd-nspawn fully isolates containers from each other and from the host system, therefore processes running in a container are not able to communicate with processes from other containers. It fully virtualizes the process tree, filesystem, users, host and domain name.
