@@ -17,6 +17,10 @@ Extended Attributes associate metadata not interpreted directly by the filesyste
 
 Flag values are stored in the file inode and may be modified and set only by the root user. They are viewed with **lsattr** and set with **chattr**
 
+### inode
+
+What information is not stored on the inode? -- File name
+
 ### Flags:
 
 * i: Immutable
