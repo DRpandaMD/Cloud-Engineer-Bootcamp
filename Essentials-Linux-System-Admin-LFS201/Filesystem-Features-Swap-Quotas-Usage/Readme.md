@@ -173,4 +173,4 @@ To display disk usage for a specific directory:
 
 * `du -h somedir`
 
-## Labs
+## Labs -- to be done at a later date
