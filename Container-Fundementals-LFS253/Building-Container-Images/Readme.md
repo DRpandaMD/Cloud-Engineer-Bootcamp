@@ -45,3 +45,46 @@ There are a LOT!  Check the docks [Dockerfile Reference](https://docs.docker.com
 Also for reference check the dockerfiles on [DockerHub](https://hub.docker.com/)
 
 In the build process use a `.dockerignore` file to ignore directories 
+
+
+
+### Quiz
+
+Again with the quiz it seemed a bit off with the questions they were asking
+
+A container image is a runtime object. True or False?  **FALSE**
+
+Which of the following are image creation methods? Select all answers that apply.
+
+* build from scratch
+
+* from a running container
+
+* image conversion 
+
+* Containers can be created from images, and images can be created from containers
+
+A container image can be created from (Select all answers that apply)
+
+* a running container
+
+* base container image
+
+* File containg set of instructions
+
+Instead of sharing container images, what other objects can we share to enable image builds? Select all answers that apply
+
+* Configfiles -- lol what?
+
+* Dockerfiles
+
+Dockerfiles and Containerfiles include build time instructions 
+
+* From
+* Run
+* Shell
+
+Dockerfiles and Containerfiles include run time instructions 
+
+* Cmd
+* Entrypoint 
