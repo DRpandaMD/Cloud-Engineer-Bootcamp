@@ -36,3 +36,5 @@ It is recommended, however, the use of a tmpfs mount for ephemeral data, not onl
 Persistent data, however, is critical data that has to be stored in a location that provides data resilience, to then later be managed by an aggregator or other applications designed to process and manage critical data. Persistent data is recommended to be stored on external persistent volume mounts managed from the Docker CLI for easy backup and migration, flexibility, portability, sharing, and extended functionality. Persistent volumes are not managed by UnionFS, are not specified and defined only within the scope of a container, and do not get deleted together with the container.
 
 Docker users utilize volume plugins to store Docker volumes on remote hosts or cloud providers, to encrypt the contents of volumes, or to add other functionality. Such plugins are the Azure File Storage plugin, BeeGFS Volume Plugin, DigitalOcean Block Storage plugin, Flocker plugin, gce-docker plugin, GlusterFS plugin, VMware vSphere Storage plugin, etc.
+
+## Labs -- to be done again.
