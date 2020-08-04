@@ -1,0 +1,163 @@
+# Installation and Configuration
+
+* [Home](/README.md)
+
+## What to learn
+
+* Download installation and configuration tools.
+
+* Install a Kubernetes master and grow a cluster.
+
+* Configure a network solution for secure communications.
+
+* Discuss highly-available deployment considerations.
+
+## Installation Tools
+
+* One way is to use Google Container Engine (GKE), a cloud service from the Google Cloud Platform, that lets you request a Kubernetes cluster with the latest stable version.
+
+* Another easy way to get started is to use Minikube. It is a single binary which deploys into the Oracle VirtualBox software, which can run in several operating systems. While Minikube is local and single node, it will give you a learning, testing, and development platform. MicroK8s is a  newer tool tool developed by Canonical, and aimed at easy installation. Aimed at appliance-like installations, it currently runs on Ubuntu 16.04 and 18.04. 
+
+
+* To be able to use the Kubernetes cluster, you will need to have installed the Kubernetes command line, called **kubectl**. This runs locally on your machine and targets the API server endpoint. It allows you to create, manage, and delete all Kubernetes resources (e.g. Pods, Deployments, Services). It is a powerful CLI that we will use throughout the rest of this course. So, you should become familiar with it.
+
+* kubeadm, the community-suggested tool from the Kubernetes project, that makes installing Kubernetes easy and avoids vendor-specific installers. Getting a cluster running involves two commands: kubeadm init, that you run on one Master node, and then, kubeadm join, that you run on your worker or redundant master nodes, and your cluster bootstraps itself. The flexibility of these tools allows Kubernetes to be deployed in a number of places. Lab exercises use this method. 
+
+## Installing kubectl
+
+* [See Kubectl Install Docs](https://kubernetes.io/docs/tasks/tools/install-kubectl/)  They have a wide array of how to install it. 
+
+* You can (if needed) download the code from GitHub, and go through the usual steps to compile and install kubectl.
+
+* This command line will use ` ~/.kube/config` as a configuration file. This contains all the Kubernetes endpoints that you might use. If you examine it, you will see cluster definitions (i.e. IP endpoints), credentials, and contexts.
+
+* A context is a combination of a cluster and user credentials. You can pass these parameters on the command line, or switch the shell between contexts with a command
+
+`kubectl config use-context myContext`
+
+
+## Using GKE
+
+You will need:
+
+* A Google Cloud Account
+
+* Payment Method
+
+* The gcloud cli installed OR just used the google cloud shell (its free)
+
+You can follow the [GKE Quickstart](https://cloud.google.com/kubernetes-engine/docs/quickstart)
+
+```bash
+
+gcloud container clusters create cluster-name --num-nodes=1
+
+
+gcloud container clusters get-credentials cluster-name
+
+```
+
+## Using Minikube
+
+Minikube is an open source project within the GitHub Kubernetes organization. While you can download a release from GitHub, following listed directions, it may be easier to download a pre-compiled binary. Make sure to verify and get the latest version see [Github Minikube](https://github.com/kubernetes/minikube#minikube)
+
+
+## Using Kubeadm
+
+See the [kubeadm docs](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/) on how to "Create a single control-plane cluster with kubeadm"
+
+## Installing a Pod Network
+
+Prior to initializing the Kubernetes cluster, the network must be considered and IP conflicts avoided. There are several Pod networking choices, in varying levels of development and feature set.
+
+Many of the projects will mention the Container Network Interface (CNI), which is a CNCF project. Several container runtimes currently use CNI. As a standard to handle deployment management and cleanup of network resources, CNI will become more popular.
+
+
+### Calico
+
+A flat Layer 3 network which communicates without IP encapsulation, used in production with software such as Kubernetes, OpenShift, Docker, Mesos and OpenStack. Viewed as a simple and flexible networking model, it scales well for large environments. Another network option, Canal, also part of this project, allows for integration with Flannel. Allows for implementation of network policies. See the [Calico Project Page](https://www.projectcalico.org/) for more information.
+
+
+### Flannel
+
+A Layer 3 IPv4 network between the nodes of a cluster. Developed by CoreOS, it has a long history with Kubernetes. Focused on traffic between hosts, not how containers configure local networking, it can use one of several backend mechanisms, such as VXLAN. A flanneld agent on each node allocates subnet leases for the host. While it can be configured after deployment, it is much easier prior to any Pods being added. See the [flannel github](https://github.com/coreos/flannel#flannel) for more information. 
+
+
+### Kube-Router
+
+Feature-filled single binary which claims to "do it all". The project is in the alpha stage, but promises to offer a distributed load balancer, firewall, and router purposely built for Kubernetes. See the [Kube-Router Page](https://www.kube-router.io/)
+
+
+### Romana
+
+This is another project aimed at network and security automation for cloud native applications. Aimed at large clusters, IPAM-aware topology and integration with kops clusters.  See the [Romana Github page](https://github.com/romana/romana#romana---network-and-security-automation-solution-for-cloud-native-applications)
+
+### Weave Net
+
+It is typically used as an add-on for a CNI-enabled Kubernetes cluster. See [Weave Net](https://www.weave.works/oss/net/)
+
+
+## More Installation tools
+
+### Kubespray 
+
+kubespray is now in the Kubernetes incubator. It is an advanced Ansible playbook which allows you to set up a Kubernetes cluster on various operating systems and use different network providers. ​It was once known as kargo. See [kubespray Github](https://github.com/kubernetes-sigs/kubespray#deploy-a-production-ready-kubernetes-cluster)
+
+### kops
+
+kops (Kubernetes Operations) lets you create a Kubernetes cluster on AWS via a single command line. Also in beta for GKE and alpha for VMware. See [kops github](https://github.com/kubernetes/kops#kops---kubernetes-operations)
+
+
+### kube-aws
+
+kube-aws is a command line tool that makes use of the AWS Cloud Formation to provision a Kubernetes cluster on AWS.  [kube-aws](https://kubernetes-incubator.github.io/kube-aws/)
+
+
+### kubicorn
+
+kubicorn is a tool which leverages the use of kubeadm to build a cluster. It claims to have no dependency on DNS, runs on several operating systems, and uses snapshots to capture a cluster and move it. [kubeicorn](http://kubicorn.io/)
+
+
+## Main Deployment Configurations
+
+### Single-node
+
+With a single-node deployment, all the components run on the same server. This is great for testing, learning, and developing around Kubernetes.
+
+### Single head node, multiple workers
+
+Adding more workers, a single head node and multiple workers typically will consist of a single node etcd instance running on the head node with the API, the scheduler, and the controller-manager.
+
+### Multiple head nodes with HA, multiple workers
+
+Multiple head nodes in an HA configuration and multiple workers add more durability to the cluster. The API server will be fronted by a load balancer, the scheduler and the controller-manager will elect a leader (which is configured via flags). The etcd setup can still be single node.
+
+### HA etcd, HA head nodes, multiple workers 
+
+The most advanced and resilient setup would be an HA etcd cluster, with HA head nodes and multiple workers. Also, etcd would run as a true cluster, which would provide HA and would run on nodes separate from the Kubernetes head nodes.
+
+
+## Compling from source -- LOL
+
+The list of binary releases is available on GitHub. Together with gcloud, minikube, and kubeadmin, these cover several scenarios to get started with Kubernetes.
+
+Kubernetes can also be compiled from source relatively quickly. You can clone the repository from GitHub, and then use the Makefile to build the binaries. You can build them natively on your platform if you have a Golang environment properly set up, or via Docker containers if you are on a Docker host.
+
+To build natively with Golang, first install Golang. Download files and directions can be found online.
+
+Once Golang is working, you can clone the kubernetes repository, around 500MB in size. Change into the directory and use make:
+
+```bash
+cd $GOPATH
+
+git clone https://github.com/kubernetes/kubernetes
+
+cd kubernetes
+
+make
+
+```
+
+On a Docker host, clone the repository anywhere you want and use the make quick-release command. The build will be done in Docker containers. 
+
+The _output/bin directory will contain the newly built binaries.
