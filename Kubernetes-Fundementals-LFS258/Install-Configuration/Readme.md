@@ -161,3 +161,76 @@ make
 On a Docker host, clone the repository anywhere you want and use the make quick-release command. The build will be done in Docker containers. 
 
 The _output/bin directory will contain the newly built binaries.
+
+## Installing Kubernetes from scratch labs
+
+### Install Kubernetes
+
+* start with a fresh Ubuntu 18 lts image on gcp (I used a `n1-standard-1 (1 vCPU, 3.75 GB memory)` instance) and ssh into it
+
+* I used this `gcloud beta compute ssh --zone "us-central1-a" "kubemaster" --project "kubernetes-discovery"` to ssh into from the gcloud shell
+
+* update and upgrade system, install a text editor and install docker
+
+```bash
+    1  apt update
+    2  apt upgrade
+    3  apt install vim
+    4  which vim
+    5  apt install docker.io
+    6  history
+```
+
+* manually add repo entry for kubernetes
+
+`vim /etc/apt/sources.list.d/kubernetes.list`  
+
+* add the repo `deb  http://apt.kubernetes.io/  kubernetes-xenial  main`
+
+* add GPG key for packages `curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -`
+
+* with the new repo added you gotta update the system: `apt update`
+
+* now install the software `apt install -y kubeadm=1.18.1-00 kubelet=1.18.1-00 kubectl=1.18.1-00`
+
+* hold the software at the most recent version `apt-mark hold kubelet kubeadm kubectl` *the latest versions are not nearly as stable as the older versions.... so i am told*
+
+* now we need to install a pod network here we are going to install Calico `wget https://docs.projectcalico.org/manifests/calico.yaml`
+
+* next we need to add the ip address of the node to etc hosts
+
+`ip addr show` and lookf for something like `inet 10.128.0.44/32 scope global dynamic ens4`
+
+* copy that ip and put it in `/etc/hosts`
+
+* now we have to create a *kubeadm-config.yaml*
+
+```yaml
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: 1.18.1
+controlPlaneEndpoint: "k8smaster:6443"
+networking:
+  podSubnet: 192.168.0.0/16
+```
+
+* now to try to run `kubeadm init`
+
+`kubeadm init --config=kubeadm-config.yaml --upload-certs | tee kubeadm-init.out`
+
+AND the lab broke here, I can not continue 
+
+This is why I opt to used GKE instead of doing a manual install.
+
+**GROSS**
+
+
+## Quiz Questions
+
+What is the **kubeadm** command used for? -- Create a cluster and add nodes
+
+Which of the following is the main binary for working with objects of a Kubernetes cluster? -- kubectl
+
+How many pod networks can you have per cluster? Only 1
+
+The ~/.kube/config file contains _____________.??? { Engpoints, SSL Keys, Contexts}
