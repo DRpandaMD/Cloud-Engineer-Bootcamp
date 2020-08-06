@@ -199,7 +199,7 @@ The _output/bin directory will contain the newly built binaries.
 
 * next we need to add the ip address of the node to etc hosts
 
-`ip addr show` and lookf for something like `inet 10.128.0.44/32 scope global dynamic ens4`
+`ip addr show` and look for something like `inet 10.128.0.44/32 scope global dynamic ens4`
 
 * copy that ip and put it in `/etc/hosts`
 
