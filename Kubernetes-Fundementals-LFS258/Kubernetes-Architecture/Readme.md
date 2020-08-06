@@ -103,3 +103,122 @@ Should a Pod require access to storage, Secrets or ConfigMaps, the kubelet will 
 * passes request to local container engine
 
 * reports status of Pods and node to cluster
+
+## Services
+
+With every object and agent decoupled we need a flexible and scalable agent which connects resources together and will reconnect, should something die and a replacement is spawned. Each Service is a microservice handling a particular bit of traffic, such as a single NodePort or a LoadBalancer to distribute inbound requests among many Pods.
+
+A Service also handles access policies for inbound requests, useful for resource control, as well as for security. 
+
+A service:
+
+* connects pods together
+
+* exposes pods to the internet
+
+* decouples settings
+
+* can be used to define pod access policy 
+
+## Controllers
+
+An important concept for orchestration is the use of controllers. Various controllers ship with Kubernetes, and you can create your own, as well. A simplified view of a controller is an agent, or Informer, and a downstream store. Using a DeltaFIFO queue, the source and downstream are compared. A loop process receives an obj or object, which is an array of deltas from the FIFO queue. As long as the delta is not of the type Deleted, the logic of the controller is used to create or modify some object until it matches the specification. 
+
+The Informer which uses the API server as a source requests the state of an object via an API call. The data is cached to minimize API server transactions. A similar agent is the SharedInformer; objects are often used by multiple other objects. It creates a shared cache of the state for multiple requests. 
+
+A Workqueue uses a key to hand out tasks to various workers. The standard Go work queues of rate limiting, delayed, and time queue are typically used. 
+
+The endpoints, namespace, and serviceaccounts controllers each manage the eponymous resources for Pods.
+
+## Pods
+
+The whole point of Kubernetes is to orchestrate the lifecycle of a container. We do not interact with particular containers. Instead, the smallest unit we can work with is a Pod. Some would say a pod of whales or peas-in-a-pod. Due to shared resources, the design of a Pod typically follows a one-process-per-container architecture.
+
+Containers in a Pod are started in parallel. As a result, there is no way to determine which container becomes available first inside a pod. The use of InitContainers can order startup, to some extent. To support a single process running in a container, you may need logging, a proxy, or special adapter. These tasks are often handled by other containers in the same pod.
+
+There is only one IP address per Pod, for almost every network plugin. If there is more than one container in a pod, they must share the IP. To communicate with each other, they can either use IPC, the loopback interface, or a shared filesystem.
+
+While Pods are often deployed with one application container in each, a common reason to have multiple containers in a Pod is for logging. You may find the term sidecar for a container dedicated to performing a helper task, like handling logs and responding to requests, as the primary application container may not have this ability. The term sidecar, like ambassador and adapter, does not have a special setting, but refers to the concept of what secondary pods are included to do.
+
+## Containers 
+
+While Kubernetes orchestration does not allow direct manipulation on a container level, we can manage the resources containers are allowed to consume. 
+
+In the resources section of the PodSpec you can pass parameters which will be passed to the container runtime on the scheduled node: 
+
+```yaml
+resources:
+  limits: 
+    cpu: "1"
+    memory: "4Gi" 
+  requests:
+    cpu: "0.5"
+    memory: "500Mi"
+```
+
+Another way to manage resource usage of the containers is by creating a ResourceQuota object, which allows hard and soft limits to be set in a namespace. The quotas allow management of more resources than just CPU and memory and allows limiting several objects. 
+
+A beta feature in v1.12 uses the scopeSelector field in the quota spec to run a pod at a specific priority if it has the appropriate priorityClassName in its pod spec.
+
+## Init containers
+
+* why?? **Used to perform some action to set up or before a Pod comes online**
+
+Not all containers are the same. Standard containers are sent to the container engine at the same time, and may start in any order. LivenessProbes, ReadinessProbes, and StatefulSets can be used to determine the order, but can add complexity. Another option can be an Init container, which must complete before app containers will be started. Should the init container fail, it will be restarted until completion, without the app container running. 
+
+The init container can have a different view of the storage and security settings, which allows utilities and commands to be used, which the application would not be allowed to use.. Init containers can contain code or utilities that are not in an app. It also has an independent security from app containers.
+
+The code below will run the init container until the ls command succeeds; then the database container will start.
+
+```yaml
+spec:
+  containers:
+  - name: main-app
+    image: databaseD 
+  initContainers:
+  - name: wait-database
+    image: busybox
+    command: ['sh', '-c', 'until ls /db/dir ; do sleep 5; done; '] 
+```
+
+## Node(s)
+
+A node is an API object created outside the cluster representing an instance. While a master must be Linux, worker nodes can also be Microsoft Windows Server 2019. Once the node has the necessary software installed, it is ingested into the API server.
+
+At the moment, you can create a master node with `kubeadm init` and worker nodes by passing join. In the near future, secondary master nodes and/or etcd nodes may be joined.
+
+If the kube-apiserver cannot communicate with the kubelet on a node for 5 minutes, the default NodeLease will schedule the node for deletion and the `NodeStatus` will change from ready. The pods will be evicted once a connection is re-established. They are no longer forcibly removed and rescheduled by the cluster.
+
+Each node object exists in the kube-node-lease namespace. To remove a node from the cluster, first use `kubectl delete node <node-name>` to remove it from the API server. This will cause pods to be evacuated. Then, use `kubeadm reset` to remove cluster-specific information. You may also need to remove iptables information, depending on if you plan on re-using the node.
+
+## Single Ip Per Pod
+
+A pod represents a group of co-located containers with some associated data volumes. All containers in a pod share the same network namespace.
+
+
+To communicate with each other, containers within pods can use the loopback interface, write to files on a common filesystem, or via inter-process communication (IPC). There is now a network plugin from HPE Labs which allows multiple IP addresses per pod, but this feature has not grown past this new plugin.
+
+Starting as an alpha feature in 1.16 is the ability to use IPv4 and IPv6 for pods and services. When creating a service, you would create the endpoint for each address family separately.
+
+## Networking Setup 
+
+Getting all the previous components running is a common task for system administrators who are accustomed to configuration management. But, to get a fully functional Kubernetes cluster, the network will need to be set up properly, as well.
+
+A detailed explanation about the Kubernetes networking model can be seen on the [Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/) page in the Kubernetes documentation.
+
+If you have experience deploying virtual machines (VMs) based on IaaS solutions, this will sound familiar. The only caveat is that, in Kubernetes, the lowest compute unit is not a container, but what we call a pod. 
+
+A pod is a group of co-located containers that share the same IP address. From a networking perspective, a pod can be seen as a virtual machine of physical hosts. The network needs to assign IP addresses to pods, and needs to provide traffic routes between all pods on any nodes. 
+
+The three main networking challenges to solve in a container orchestration system are:
+
+* Coupled container-to-container communication (solved by the pod concept).
+
+* Pod-to-pod communication.
+
+* External-to-pod communication 
+
+Kubernetes expects the network configuration to enable pod-to-pod communication to be available; it will not do it for you.
+
+## Pod-to-Pod Communication
+
