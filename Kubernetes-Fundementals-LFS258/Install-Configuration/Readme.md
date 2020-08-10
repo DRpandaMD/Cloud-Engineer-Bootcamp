@@ -224,6 +224,84 @@ This is why I opt to used GKE instead of doing a manual install.
 
 **GROSS**
 
+* After some trouble shooting :
+
+```bash
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+```
+
+So lets do that!
+
+* After you do those commands you should check out your work by `less .kube/conf`
+
+Now Apply the network plugin configuration to your cluster. 
+Remember to copy the file to the current, non-root user directory first.
+
+* `sudo cp /root/calico.yaml`  and then `1kubectl apply -f calico.yaml`
+
+* While many objects have short names, a `kubectl` command can be a lot to type. We will enable `bash auto-completion`. Begin by adding the settings to the current shell.  Then update the `/.bashrcfile` to make it persistent.  Ensure the `bash-completion` package is installed. If it was not installed, log out then back in for the shell completion to work.
+
+```bash
+sudo apt-get install bash-completion -y
+source <(kubectl completion bash)
+echo "source <(kubectl completion bash)" >> ./bashrc
+```
+
+* then you will need to test for bash completion `kubectl des <tab> nod <tab>`
+
+* Congrats your K8s master server is up and running
+
+### Grow the Cluster
+
+* head back over to GCP and make duplicate of that instance and give it a new name
+
+* update the system and install docker
+
+* repeat the same install from before 
+
+```bash
+root@worker-01:~# history
+    1  clear
+    2  apt update
+    3  apt upgrade
+    4  apt install docker.io
+    5  apt install vim
+    6  vim /etc/apt/sources.list.d/kubernetes.list
+    7  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+    8  apt update
+    9  apt install -y kubeadm=1.18.1-00 kubelet=1.18.1-00 kubectl=1.18.1-00
+   10  apt-mark hold kubeadm kublet kubectl
+   11  apt-mark hold kubeadm kubelet kubectl
+   12  history
+```
+
+* Hop back  over to the master 
+
+* make a token `sudo kubeadm token create`
+
+* now you need to use a *Discovery Token CA Cert Hash*
+
+```bash
+openssl x509 -pubkey \
+-in /etc/kubernetes/pki/ca.crt | openssl rsa \
+-pubin -outform der 2>/dev/null | openssl dgst \
+-sha256 -hex | sed 's/ˆ.* //'
+```
+
+* keep this output you will need it later
+
+* swap back over to the worker node and insert into /etc/hosts the DNS hostname and IP 
+
+* now you will need to use token and has from the previous steps on the worker node with kubeadm to join the node to the master
+
+
 
 ## Quiz Questions
 
