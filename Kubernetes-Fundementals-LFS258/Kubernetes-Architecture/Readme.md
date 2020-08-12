@@ -222,3 +222,27 @@ Kubernetes expects the network configuration to enable pod-to-pod communication 
 
 ## Pod-to-Pod Communication
 
+While a CNI plugin can be used to configure the network of a pod and provide a single IP per pod, CNI does not help you with pod-to-pod communication across nodes.
+
+
+The requirement from Kubernetes (for pod to pod communication ) is the following:
+
+* All pods can communicate with each other across nodes.
+
+* All nodes can communicate with all pods.
+
+* No Network Address Translation (NAT).
+
+Basically, all IPs involved (nodes and pods) are routable without NAT. This can be achieved at the physical network infrastructure if you have access to it (e.g. GKE). Or, this can be achieved with a software defined overlay with solutions like:
+
+* Weave
+
+* Flannel
+
+* Calico
+
+* Romana​
+
+See the [Kubernetes Documentation on Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/) for more information.
+
+You can also check out [Installing Addons for Kubernetes Page](https://kubernetes.io/docs/concepts/cluster-administration/addons/) for a list of all types of Addons

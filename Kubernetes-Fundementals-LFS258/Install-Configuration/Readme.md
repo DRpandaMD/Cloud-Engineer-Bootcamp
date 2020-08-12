@@ -301,6 +301,76 @@ openssl x509 -pubkey \
 
 * now you will need to use token and has from the previous steps on the worker node with kubeadm to join the node to the master
 
+* it looks like this
+
+```bash
+kubeadm join \
+--token 055vho.asnknackf2pwcsi8 \
+k8smaster:6443 \
+--discovery-token-ca-cert-hash \ sha256:299ea9e9ad5cf318c77ed5c42a94a93e479943b9f9c3e38611851cab
+```
+
+* **SideNote** *I am so glad that GKE does all this for you*
+
+* Now you should be able to run `kubectl get nodes` on the master and both nodes will show up!
+
+* Yay you did it :D
+
+### Finish Cluster Set up
+
+* We will want to enable the Pod Scheduler to run pods on the Master ( Don't ask me why)
+
+* run `kubectl describe nodes k8smaster` and scroll back up to look at *taints* you will see the node listed with "NoSchedule"
+
+* run the following to get the master untainted
+
+```bash
+kubectl describe node k8smaster | grep -i taint
+kubectl describe node | grep -i taint
+kubectl taint nodes --all node-role.kubernetes.io/master-
+kubectl describe node | grep -i taint
+```
+
+* run `kubectl get pods --all-namespaces` to check the status of Pods already running.
+
+#### Deploy a simple application
+
+* fist create a new deployment with a nginx image (the janky way): `kubectl create deployment nginx --image=nginx`
+
+* use `kubectl get deployments` to see the status of your deployment
+
+* now need the yaml of this so we can edit it, run `kubectl get deployment nginx -o yaml > first.yaml`
+
+* **STOP**  this is a mess
+
+* they have you use the kubernetes API generate you a yaml that spits out a TON of garbage information
+
+* I went over to the Kubernetes docs page and the instructions are much easier.
+
+* Create this yaml  `nginx.yaml`
+
+```yaml
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
 
 
 ## Quiz Questions
