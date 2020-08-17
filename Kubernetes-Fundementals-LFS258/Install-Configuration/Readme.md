@@ -166,7 +166,7 @@ The _output/bin directory will contain the newly built binaries.
 
 ### Install Kubernetes
 
-* start with a fresh Ubuntu 18 lts image on gcp (I used a `n1-standard-1 (1 vCPU, 3.75 GB memory)` instance) and ssh into it
+* start with a fresh Ubuntu 18 lts image on gcp use a N2 3.5 vcp 7.5gb of RAM and ssh into
 
 * I used this `gcloud beta compute ssh --zone "us-central1-a" "kubemaster" --project "kubernetes-discovery"` to ssh into from the gcloud shell
 
