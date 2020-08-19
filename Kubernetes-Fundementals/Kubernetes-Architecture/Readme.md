@@ -1,4 +1,4 @@
-# Kubernetes Architecture
+# Installation and Configuration
 
 * [Home](/README.md)
 
