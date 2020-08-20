@@ -106,3 +106,33 @@ Other metrics can be used and queried via REST. The autoscaler does not collect 
 The **Cluster Autoscaler** (CA) adds or removes nodes to the cluster, based on the inability to deploy a Pod or having nodes with low utilization for at least 10 minutes. This allows dynamic requests of resources from the cloud provider and minimizes expenses for unused nodes. If you are using CA, nodes should be added and removed through `cluster-autoscaler-` commands. Scale-up and down of nodes is checked every 10 seconds, but decisions are made on a node every 10 minutes. Should a scale-down fail, the group will be rechecked in 3 minutes, with the failing node being eligible in five minutes. The total time to allocate a new node is largely dependent on the cloud provider. 
 
 There is also Vertical Pod Autoscaling where it will adjust the CPU and MEM usage up or down on the pods.  Check out the [Vertical Pod Auto Scaling Google Doc Page](https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler)
+
+## Jobs
+
+Straight from the K8s documentation 
+
+A Job creates one or more Pods and ensures that a specified number of them successfully terminate. As pods successfully complete, the Job tracks the successful completions. When a specified number of successful completions is reached, the task (ie, Job) is complete. Deleting a Job will clean up the Pods it created.
+
+A simple case is to create one Job object in order to reliably run one Pod to completion. The Job object will start a new Pod if the first Pod fails or is deleted (for example due to a node hardware failure or a node reboot).
+
+You can also use a Job to run multiple Pods in parallel.  See more plus examples at the [Kubernetes Docs Job Page](https://kubernetes.io/docs/concepts/workloads/controllers/job/)
+
+Jobs are part of the `batch` API group. They are used to run a set number of pods to completion. If a pod fails, it will be restarted until the number of completion is reached.
+
+While they can be seen as a way to do batch processing in Kubernetes, they can also be used to run one-off pods. A Job specification will have a parallelism and a completion key. If omitted, they will be set to one. If they are present, the parallelism number will set the number of pods that can run concurrently, and the completion number will set how many pods need to run successfully for the Job itself to be considered done. Several Job patterns can be implemented, like a traditional work queue.
+
+Cronjobs work in a similar manner to Linux jobs, with the same time syntax. There are some cases where a job would not be run during a time period or could run twice; as a result, the requested Pod should be idempotent.
+
+An option spec field is `.spec.concurrencyPolicy`, which determines how to handle existing jobs, should the time segment expire. If set to `Allow`, the default, another concurrent job will be run. If set to Forbid, the current job continues and the new job is skipped. A value of Replace cancels the current job and starts a new job in its place.
+
+## Role Based Access Control (RBAC)
+
+From the K8s docs:
+
+Role-based access control (RBAC) is a method of regulating access to computer or network resources based on the roles of individual users within your organization.
+
+RBAC authorization uses the `rbac.authorization.k8s.io` API group to drive authorization decisions, allowing you to dynamically configure policies through the Kubernetes API.
+
+To enable RBAC, start the API server with the `--authorization-mode` flag set to a comma-separated list that includes `RBAC`; for example:
+
+`kube-apiserver --authorization-mode=Example,RBAC --other-options --more-options`
