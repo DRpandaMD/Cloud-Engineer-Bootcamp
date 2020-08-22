@@ -224,6 +224,36 @@ This is why I opt to used GKE instead of doing a manual install.
 
 **GROSS**
 
+
+```bash
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+You can now join any number of the control-plane node running the following command on each as root:
+
+  kubeadm join k8smaster:6443 --token xxx \
+    --discovery-token-ca-cert-hash sha256:xxx \
+    --control-plane --certificate-key xxx
+
+Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
+As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
+"kubeadm init phase upload-certs --upload-certs" to reload certs afterward.
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join k8smaster:6443 --token xxx\
+    --discovery-token-ca-cert-hash sha256:xxx
+```
+
 * After some trouble shooting :
 
 ```bash
