@@ -164,26 +164,32 @@ The _output/bin directory will contain the newly built binaries.
 
 ## Installing Kubernetes from scratch labs
 
-### Install Kubernetes
+### 3.1 Install Kubernetes
 
 * start with a fresh Ubuntu 18 lts image on gcp use a N2 3.5 vcp 7.5gb of RAM and ssh into
 
 * I used this `gcloud beta compute ssh --zone "us-central1-a" "kubemaster" --project "kubernetes-discovery"` to ssh into from the gcloud shell
+
+* become root `sudo -i` " From `man sudo`: -i, --login Run the shell specified by the target user's password data‐ base entry as a login shell."
 
 * update and upgrade system, install a text editor and install docker
 
 ```bash
     1  apt update
     2  apt upgrade
-    3  apt install vim
-    4  which vim
+    3  apt install nano
+    4  which nano
     5  apt install docker.io
     6  history
 ```
 
-* manually add repo entry for kubernetes
+* after some issues I included : 
+  * `systemctl enable docker` 
+  * `systemctl start docker`
 
-`vim /etc/apt/sources.list.d/kubernetes.list`  
+* make the `kubernetes.list` file and then manually add repo entry for kubernetes
+
+`nano /etc/apt/sources.list.d/kubernetes.list`  
 
 * add the repo `deb  http://apt.kubernetes.io/  kubernetes-xenial  main`
 
@@ -197,13 +203,22 @@ The _output/bin directory will contain the newly built binaries.
 
 * now we need to install a pod network here we are going to install Calico `wget https://docs.projectcalico.org/manifests/calico.yaml`
 
+* I dug up the official calcio docs page on this step [calico install gce](https://docs.projectcalico.org/getting-started/kubernetes/self-managed-public-cloud/gce)
+
+* right after you install download the calico.yaml manifest, you will need to double check it.
+  * I just post the calico.yaml url from above into my browser
+  * then I `ctrl+F` for "CALICO_IPV4POOL_CIDR"
+  * use a stick note and copy / paste the CIDR Block
+
 * next we need to add the ip address of the node to etc hosts
 
 `ip addr show` and look for something like `inet 10.128.0.44/32 scope global dynamic ens4`
 
-* copy that ip and put it in `/etc/hosts`
+* copy that ip and put it in `/etc/hosts` 
+  * to look like `xxx.xxx.xxx.xxx. k8smaster (or your master host name)`  
 
-* now we have to create a *kubeadm-config.yaml*
+* now we have to create a *kubeadm-config.yaml*; `nano kubeadm-config.yaml`
+  * *note* that the podSubnet is the same as the subnet we copied over from the calico manifest
 
 ```yaml
 apiVersion: kubeadm.k8s.io/v1beta2
@@ -218,43 +233,8 @@ networking:
 
 `kubeadm init --config=kubeadm-config.yaml --upload-certs | tee kubeadm-init.out`
 
-AND the lab broke here, I can not continue 
 
-This is why I opt to used GKE instead of doing a manual install.
-
-**GROSS**
-
-
-```bash
-Your Kubernetes control-plane has initialized successfully!
-
-To start using your cluster, you need to run the following as a regular user:
-
-  mkdir -p $HOME/.kube
-  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-  sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
-You should now deploy a pod network to the cluster.
-Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
-  https://kubernetes.io/docs/concepts/cluster-administration/addons/
-
-You can now join any number of the control-plane node running the following command on each as root:
-
-  kubeadm join k8smaster:6443 --token xxx \
-    --discovery-token-ca-cert-hash sha256:xxx \
-    --control-plane --certificate-key xxx
-
-Please note that the certificate-key gives access to cluster sensitive data, keep it secret!
-As a safeguard, uploaded-certs will be deleted in two hours; If necessary, you can use
-"kubeadm init phase upload-certs --upload-certs" to reload certs afterward.
-
-Then you can join any number of worker nodes by running the following on each as root:
-
-kubeadm join k8smaster:6443 --token xxx\
-    --discovery-token-ca-cert-hash sha256:xxx
-```
-
-* After some trouble shooting :
+* After some trouble shooting ( issue was, not enough RAM so i used a bigger VM `n1-standard-2 (2 vCPUs, 7.5 GB memory)` to be exact):
 
 ```bash
 Your Kubernetes control-plane has initialized successfully!
@@ -274,7 +254,7 @@ So lets do that!
 Now Apply the network plugin configuration to your cluster. 
 Remember to copy the file to the current, non-root user directory first.
 
-* `sudo cp /root/calico.yaml`  and then `1kubectl apply -f calico.yaml`
+* `sudo cp /root/calico.yaml calico.yaml`  and then `kubectl apply -f calico.yaml`
 
 * While many objects have short names, a `kubectl` command can be a lot to type. We will enable `bash auto-completion`. Begin by adding the settings to the current shell.  Then update the `/.bashrcfile` to make it persistent.  Ensure the `bash-completion` package is installed. If it was not installed, log out then back in for the shell completion to work.
 
@@ -302,12 +282,11 @@ root@worker-01:~# history
     2  apt update
     3  apt upgrade
     4  apt install docker.io
-    5  apt install vim
-    6  vim /etc/apt/sources.list.d/kubernetes.list
+    5  apt install vim ##skipped as I use nano which is already installed
+    6  vim /etc/apt/sources.list.d/kubernetes.list ## add deb  http://apt.kubernetes.io/  kubernetes-xenial  main to it save and exit
     7  curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
     8  apt update
     9  apt install -y kubeadm=1.18.1-00 kubelet=1.18.1-00 kubectl=1.18.1-00
-   10  apt-mark hold kubeadm kublet kubectl
    11  apt-mark hold kubeadm kubelet kubectl
    12  history
 ```
@@ -327,7 +306,7 @@ openssl x509 -pubkey \
 
 * keep this output you will need it later
 
-* swap back over to the worker node and insert into /etc/hosts the DNS hostname and IP 
+* swap back over to the worker node and insert into /etc/hosts the DNS hostname and IP of the **master**
 
 * now you will need to use token and has from the previous steps on the worker node with kubeadm to join the node to the master
 
@@ -411,4 +390,4 @@ Which of the following is the main binary for working with objects of a Kubernet
 
 How many pod networks can you have per cluster? Only 1
 
-The ~/.kube/config file contains _____________.??? { Engpoints, SSL Keys, Contexts}
+The ~/.kube/config file contains _____________.??? { Endpoints, SSL Keys, Contexts}
