@@ -380,6 +380,9 @@ spec:
         - containerPort: 80
 ```
 
+So just use the `nginx-deployment   ClusterIP   10.99.101.194` to curl.
+
+Why the Linux Foundation makes this way harder is beyond me.
 
 
 ## Quiz Questions
