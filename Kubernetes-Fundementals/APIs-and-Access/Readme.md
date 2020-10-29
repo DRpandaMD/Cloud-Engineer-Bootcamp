@@ -248,3 +248,48 @@ Usually the flow is from: Alpha -> Beta -> Stable / Release
 * **Beta** -- The Beta , has more well-tested code and is enabled by default. It also ensures that, as changes move forward, they will be tested for backwards compatibility between versions. It has not been adopted and tested enough to be called stable. You can expect some bugs and issues. Often the "edge"
 
 * **Stable**  -- Use of the Stable version, denoted by only an integer which may be preceded by the letter v, is for stable APIs.  Use this for production.
+
+## Lab 5.1 Configuring TLS Access
+
+
+```json
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata":{
+    "name": "curlpod",
+    "namespace": "default",
+    "labels":{
+      "name": "examplepod"
+      }
+    },
+    "spec": {
+      "containers": [{
+        "name": "nginx",
+        "image": "nginx",
+        "ports": [{"containerPort": 80}]
+      }]
+    }
+}
+
+```
+
+* Again the labs broke and there is 0 trouble shooting help with them.
+  * This course is most certainty NOT worth the money at Full Price
+
+## Quiz Questions
+
+* Kubernetes uses a RESTful API-driven architecture, accepting standard HTTP verbs. True or False? **TRUE**
+
+* ____allow for metadata to be included with an object that may be helpful outside the Kubernetes object interaction. *Annotations*
+
+* What *must* be included in a pod template?
+
+  * **kind**
+  * **metadata**
+  * **spec**
+  * **apiVersion**
+
+* What should be appended to the command in order to affect every namespace with `kubectl`?  *`--all-namespaces`*
+
+* All objects are restricted to a single namespace. True or False? **FALSE**
