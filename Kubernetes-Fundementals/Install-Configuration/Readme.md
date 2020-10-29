@@ -166,7 +166,7 @@ The _output/bin directory will contain the newly built binaries.
 
 ### 3.1 Install Kubernetes
 
-* start with a fresh Ubuntu 18 lts image on gcp use a N2 3.5 vcp 7.5gb of RAM and ssh into
+* start with a fresh Ubuntu 18 lts image on gcp use a N2 2 vcp 8gb of RAM and ssh into it
 
 * I used this `gcloud beta compute ssh --zone "us-central1-a" "kubemaster" --project "kubernetes-discovery"` to ssh into from the gcloud shell
 
@@ -240,16 +240,14 @@ networking:
 Your Kubernetes control-plane has initialized successfully!
 
 To start using your cluster, you need to run the following as a regular user:
-
   mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
 ```
 
 So lets do that!
 
-* After you do those commands you should check out your work by `less .kube/conf`
+* After you do those commands you should check out your work by `less .kube/config`
 
 Now Apply the network plugin configuration to your cluster. 
 Remember to copy the file to the current, non-root user directory first.
@@ -380,9 +378,46 @@ spec:
         - containerPort: 80
 ```
 
+* run `kubectl apply -f nginx.yaml`
+
+* check the status of the deployment `kubectl get deployment`
+
+* expose the service `kubectl expose deployment/nginx-deployment`
+
+* check the service `kubectl get svc`
+
+* use the service endpoint ip and `curl` it on `port 80`
+
 So just use the `nginx-deployment   ClusterIP   10.99.101.194` to curl.
 
 Why the Linux Foundation makes this way harder is beyond me.
+
+
+```yaml
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        resources: {}
+```
+
+#### Access from outside of the cluster
 
 
 ## Quiz Questions
