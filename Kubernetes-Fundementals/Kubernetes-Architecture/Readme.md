@@ -1,6 +1,5 @@
 # Kubernetes Architecture
 
-
 * [Home](/README.md)
 
 ## What to learn
@@ -54,7 +53,7 @@ The Kubernetes master runs various server and manager processes for the cluster.
 
 * it is the *only* connection to the **etcd** database
 
-* validates and configures dat fro API objects and services REST ops
+* validates and configures data from API objects and services REST operations
 
 ### kube-scheduler 
 
@@ -247,3 +246,67 @@ Basically, all IPs involved (nodes and pods) are routable without NAT. This can 
 See the [Kubernetes Documentation on Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/) for more information.
 
 You can also check out [Installing Addons for Kubernetes Page](https://kubernetes.io/docs/concepts/cluster-administration/addons/) for a list of all types of Addons
+
+
+## Lab 4.1 Basic Node Maintenance 
+
+
+While the upgrade process has become stable, it remains a good idea to backup the cluster state prior to upgrading.  Thereare many tools available in the market to backup and manage etcd, each with a distinct backup and restore process. We willuse the included snapshot command, but be aware the exact steps to restore will depend on the tools used, the version of thecluster, and the nature of the disaster being recovered from.
+
+```bash
+sudo grep data-dir /etc/kubernetes/manifest/etcd.yaml
+sudo grep data-dir /etc/kubernetes/manifests/etcd.yaml
+kubectl get pods --all-namespaces
+kubectl -n kube-system exec -it etcd-k8smaster -- sh
+```
+
+*  Find the data directory of the `etcddaemon`. All of the settings for the pod can be found in the manifest. ̃`$ sudo grep data-dir /etc/kubernetes/manifests/etcd.yaml`
+
+
+* Log into the `etcdcontainer` and look at the options `etcdctlprovides`. Use tab to complete the container name. ̃`$ kubectl -n kube-system exec -it etcd-<Tab> -- sh`
+
+* we are looking for the path of some pki certs
+
+* inside the container `cd /etc/kubernetes/pki/etcd` and then `ls` or `echo *` to see the names of the files you will need
+
+* `exit` the container 
+
+* now lets check the health of the database by using the loopback IP and port 2379.  You will need to pass in the peer cert and key as well as the Certificate Authority as environment variables 
+
+```bash
+kubectl -n kube-system exec -it etcd-k8smaster -- sh \ #Same as before
+-c "ETCDCTL_API=3 \ #Version to use
+ETCDCTL_CACERT=/etc/kubernetes/pki/etcd/ca.crt \ # Pass the certificate authority
+ETCDCTL_CERT=/etc/kubernetes/pki/etcd/server.crt \ #Pass the peer cert and key
+ETCDCTL_KEY=/etc/kubernetes/pki/etcd/server.key \
+etcdctl endpoint health"   #The command to test the endpoint
+```
+
+* now we have to figure out how many databases are part of the cluster
+
+```bash
+kubectl -n kube-system exec -it etcd-k8smaster -- sh -c \
+"ETCDCTL_API=3 etcdctl --cert=./peer.crt --key=./peer.key --cacert=./ca.crt \
+--endpoints=https://127.0.0.1:2379 member list"
+```
+
+* **It kept breaking** here and of course the Labs offer 0 trouble shooting help so I skipped it.
+
+## Lab 4.2 Working with CPU and Memory constraints
+
+* *NOTE*  The Linux foundation just loves for you to open files in the terminal and make a bunch of crazy edits.
+
+* Nigel Pulton's Course on acloudguru has section on this that is *VIDEO* led and way better.
+
+## Quiz Questions
+
+
+* What is the smallest object or unit we can work with in Kubernetes?  **pod**
+
+* How many IP addresses can be configured for a Pod?  *just one*
+
+* What is the main configuration agent on a master server? **kube-apiserver**
+
+* What is the main agent on a worker node? *kubelet*
+
+* What object connects other resources together and handles Ingress and Egress traffic? **Service**
