@@ -137,4 +137,20 @@ To enable RBAC, start the API server with the `--authorization-mode` flag set to
 
 `kube-apiserver --authorization-mode=Example,RBAC --other-options --more-options`
 
-#
+## Lab 6.1
+
+* **TODO**
+
+## Quiz Questions 
+
+* All API versions should be considered stable. True or False?  *False*
+
+* Which object is the suggested object for deploying and scaling an application?  **Deployment**
+
+* From the smallest object to the largest, which is the correct order of the following Kubernetes objects?  *Container -> Pod -> Replica Set -> Deployment*
+
+* How many Pods does a DaemonSet run on each node?  **One**
+
+* Deployments handle scaling of an application based on administrative configuration. Which of the following scales resources based on CPU usage (50% by default)? *Horizontal Pod Autoscaling*
+
+* What API group do Jobs and CronJobs belong to? **Batch**
