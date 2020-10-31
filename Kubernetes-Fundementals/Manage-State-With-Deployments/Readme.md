@@ -12,3 +12,268 @@
 
 * learn to use Labels to select various objects
 
+## Overview 
+
+* The default controller for a container deployed via `kubectl run` is a Deployment. This time with a focus on configuration options.
+
+* a deployment can be made from a `YAML` or `JSON` spec file. When added to the cluster, the controller will create a `ReplicaSet` and a `Pod` automatically. The containers, their settings and applications can be modified via an update, which generates a new `ReplicaSet`, which, in turn, generates new `Pods`.
+
+* The updated objects can be staged to replace previous objects as a block or as a rolling update, which is determined as part of the deployment specification. Most updates can be configured by editing a `YAML` file and running `kubectl apply`. You can also use `kubectl edit` to modify the in-use configuration. Previous versions of the `ReplicaSets` are kept, allowing a rollback to return to a previous configuration.
+
+* Labels are essential to administration in Kubernetes, but are not an API resource. They are user-defined key-value pairs which can be attached to any resource, and are stored in the metadata. Labels are used to query or select resources in your cluster, allowing for flexible and complex management of the cluster. 
+
+
+## Deployment
+
+* **ReplicationControllers** (RC) ensure that a specified number of pod replicas is running at any one time. ReplicationControllers also give you the ability to perform rolling updates. However, those updates are managed on the client side. This is problematic if the client loses connectivity, and can leave the cluster in an unplanned state. To avoid problems when scaling the ReplicationControllers on the client side, a new resource was introduced in the apps/v1 API group: Deployments. 
+
+* Deployments allow server-side updates to pods at a specified rate. They are used for canary and other deployment patterns. Deployments generate ReplicaSets, which offer more selection features than ReplicationControllers, such as matchExpressions
+
+* Example: 
+  * Bash : `kubectl create deployment dev-web --image=nginx:1.13.7-alpine`
+
+
+## Object relationship
+
+* Check out this diagram: 
+
+![K8sObjectExample](/Kubernetes-Fundementals/Manage-State-With-Deployments/Images/ObjectsExample.png)
+
+The boxes and shapes are logical, in that they represent the controllers, or watch loops, running as a thread of the kube-controller-manager. Each controller queries the kube-apiserver for the current state of the object they track. The state of each object on a worker node is sent back from the local kubelet.
+
+The graphic in the upper left represents a container running nginx 1.11. Kubernetes does not directly manage the container. Instead, the kubelet daemon checks the pod specifications by asking the container engine, which could be Docker or cri-o, for the current status. The graphic to the right of the container shows a pod which represents a watch loop checking the container status. kubelet compares the current pod spec against what the container engine replies and will terminate and restart the pod if necessary.
+
+A multi-container pod is shown next. While there are several names used, such as sidecar or ambassador, these are all multi-container pods. The names are used to indicate the particular reason to have a second container in the pod, instead of denoting a new kind of pod.
+
+On the lower left we see a replicaSet. This controller will ensure you have a certain number of pods running. The pods are all deployed with the same podSpec, which is why they are called replicas. Should a pod terminate or a new pod be found, the replicaSet will create or terminate pods until the current number of running pods matches the specifications. Any of the current pods could be terminated should the spec demand fewer pods running.
+
+The graphic in the lower right shows a deployment. This controller allows us to manage the versions of images deployed in the pods. Should an edit be made to the deployment, a new replicaSet is created, which will deploy pods using the new podSpec. The deployment will then direct the old replicaSet to shut down pods as the new replicaSet pods become available. Once the old pods are all terminated, the deployment terminates the old replicaSet and the deployment returns to having only one replicaSet running.
+
+## Deployment details
+
+* To look at the details of newly created  objects run:
+  * `kubectl get deployment, rs, pods -o yaml`
+
+* To get the output in JSON format, run:
+  * `kubectl get deployment, rs, pods -o json`
+
+Look at this sample output
+
+```yaml
+apiVersion: v1
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+```
+
+### Explanation of Objects
+
+#### apiVersion
+
+* A value of v1 shows that this object is considered to be a stable resource. In this case, it is not the deployment. It is a reference to the List type.
+
+#### items
+
+* As the previous line is a List, this declares the list of items the command is showing.
+
+#### - apiVersion
+
+* The dash is a YAML indication of the first item, which declares the apiVersion of the object as apps/v1. This indicates the object is considered stable. Deployments are controller used in most cases.
+
+#### kind
+
+* This is where the type of object to create is declared, in this case, a deployment.
+
+## Deployment Configuration Metadata
+
+Continuing with the YAML output, look at next general block of output concerns the metadata of the deployment. This is where the labels, annotations, and other non-configuration information would be found. Note that this output will not show all possible configuration. Many settings which are set to false by default are not shown, like podAffinity or nodeAffinity.
+
+### Sample Yaml Continued
+
+```yaml
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: 2017-12-21T13:57:07Z
+  generation: 1
+  labels:
+    app: dev-web
+  name: dev-web
+  namespace: default
+  resourceVersion: "774003"
+  selfLink: /apis/apps/v1/namespaces/default/deployments/dev-web
+  uid: d52d3a63-e656-11e7-9319-42010a800003
+```
+
+#### annotations
+
+* These values do not configure the object, but provide further information that could be helpful to third-party applications or administrative tracking. Unlike labels, they cannot be used to select an object with `kubectl`.
+
+#### creationTimeStamp
+
+* Shows when the object was originally created. Does not update if the object is edited.
+
+#### generation
+
+* How many times this object has been edited, such as changing the number of replicas, for example.
+
+#### labels
+
+* Arbitrary strings used to select or exclude objects for use with kubectl, or other API calls. Helpful for administrators to select objects outside of typical object boundaries.
+
+#### name
+
+* This is a required string, which we passed from the command line. The name must be unique to the namespace.
+
+#### resourceVersion
+
+* A value tied to the etcd database to help with concurrency of objects. Any changes to the database will cause this number to change.
+
+#### selfLink
+
+* References how the kube-apiserver will ingest this information into the API.
+
+#### uid
+
+* Remains a unique ID for the life of the object.
+
+## Deployment Configuration Spec
+
+There are two spec declarations for the deployment. The first will modify the ReplicaSet created, while the second will pass along the Pod configuration.
+
+```yaml
+spec:  
+  progressDeadlineSeconds: 600
+  replicas: 1  
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: dev-web  
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+```
+
+### Details
+
+#### spec
+
+* A declaration that the following items will configure the object being created.
+
+#### progressDeadLineSeconds
+
+* Time in seconds until a progress error is reported during a change. Reasons could be quotas, image issues, or limit ranges.
+
+#### replicas
+
+* As the object being created is a ReplicaSet, this parameter determines how many Pods should be created. If you were to use kubectl edit and change this value to two, a second Pod would be generated.
+
+#### revisionHistoryLimit
+
+* How many old ReplicaSet specifications to retain for rollback.
+
+#### selector
+
+* A collection of values ANDed together. All must be satisfied for the replica to match. Do not create Pods which match these selectors, as the deployment controller may try to control the resource, leading to issues.
+
+#### matchLabels
+
+* Set-based requirements of the Pod selector. Often found with the `matchExpressions` statement, to further designate where the resource should be scheduled.
+
+#### strategy
+
+* A header for values having to do with updating Pods. Works with the later listed type. Could also be set to `Recreate`, which would delete all existing pods before new pods are created. With `RollingUpdate`, you can control how many Pods are deleted at a time with the following parameters.
+
+#### maxsurge
+
+* Maximum number of Pods over desired number of Pods to create. Can be a percentage, default of 25%, or an absolute number. This creates a certain number of new Pods before deleting old ones, for continued access.
+
+#### maxUnavailable
+
+* A number or percentage of Pods which can be in a state other than Ready during the update process.
+
+#### type
+
+* Even though listed last in the section, due to the level of white space indentation, it is read as the type of object being configured. (e.g. RollingUpdate).
+
+
+## Deployment Configuration Pod Template
+
+Look at the yaml
+
+```yaml
+template:
+  metadata:
+  creationTimestamp: null
+    labels:
+      app: dev-web
+  spec:
+    containers:
+    - image: nginx:1.13.7-alpine
+      imagePullPolicy: IfNotPresent
+      name: dev-web
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+    dnsPolicy: ClusterFirst
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    terminationGracePeriodSeconds: 30
+```
+
+### Details for Pod Template
+
+#### template
+
+* Data being passed to the ReplicaSet to determine how to deploy an object (in this case, containers).
+
+#### containers
+
+* Key word indicating that the following items of this indentation are for a container.
+
+#### image
+
+* This is the image name passed to the container engine, typically Docker. The engine will pull the image and create the Pod.
+
+#### imagePullPolicy
+
+* Policy settings passed along to the container engine, about when and if an image should be downloaded or used from a local cache.
+
+#### name (again)
+
+* Policy settings passed along to the container engine, about when and if an image should be downloaded or used from a local cache.
+
+#### resources
+
+* By default, empty. This is where you would set resource restrictions and settings, such as a limit on CPU or memory for the containers.
+
+#### terminationMessagePath
+
+* A customizable location of where to output success or failure information of a container.
+
+#### terminationMessagePolicy
+
+* The default value is File, which holds the termination method. It could also be set to FallbackToLogsOnError, which will use the last chunk of container log if the message file is empty and the container shows an error.
+
+#### dnsPolicy
+
+* Determines if DNS queries should go to coredns or, if set to Default, use the node's DNS resolution configuration.
+
+#### restartPolicy
+
+* Should the container be restarted if killed? Automatic restarts are part of the typical strength of Kubernetes.
+
+#### scheduleName
+
+* Allows for the use of a custom scheduler, instead of the Kubernetes default.
+
+#### securityContext
+
+Flexible setting to pass one or more security settings, such as SELinux context, AppArmor values, users and UIDs for the containers to use.
+
+#### terminationGracePeriodSeconds
+
+* The amount of time to wait for a SIGTERM to run until a SIGKILL is used to terminate the container.
