@@ -55,3 +55,9 @@ They are using putty which is super cringe.
 * [High Availability]
 
 * [Exam Domain Review]
+
+## CKA Exam Info
+
+* [GitHub Link to CKA Exam Review](https://github.com/cncf/curriculum/blob/master/CKA_Curriculum_v1.19.pdf)
+
+* [Linux Foundation Certification Exams: Candidate Handbook](https://docs.linuxfoundation.org/tc-docs/certification/lf-candidate-handbook)

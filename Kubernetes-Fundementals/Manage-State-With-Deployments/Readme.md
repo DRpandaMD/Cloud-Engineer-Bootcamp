@@ -277,3 +277,152 @@ Flexible setting to pass one or more security settings, such as SELinux context,
 #### terminationGracePeriodSeconds
 
 * The amount of time to wait for a SIGTERM to run until a SIGKILL is used to terminate the container.
+
+## Deployment Configuration Status
+
+Look at this Yaml sample:
+
+```yaml
+status:
+  availableReplicas: 2
+  conditions:
+  - lastTransitionTime: 2017-12-21T13:57:07Z
+    lastUpdateTime: 2017-12-21T13:57:07Z
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 2
+  readyReplicas: 2
+  replicas: 2
+  updatedReplicas: 2
+```
+
+### Explanation of Additional Elements
+
+#### availableReplicas
+  
+* Indicates how many were configured by the ReplicaSet. This would be compared to the later value of readyReplicas, which would be used to determine if all replicas have been fully generated and without error.
+
+#### observedGeneration
+
+* Shows how often the deployment has been updated. This information can be used to understand the rollout and rollback situation of the deployment.
+
+## Managing State with Deployments 
+
+The API server allows for the configurations settings to be updated for most values. There are some immutable values, which may be different depending on the version of Kubernetes you have deployed. 
+
+A common update is to change the number of replicas running. If this number is set to zero, there would be no containers, but there would still be a ReplicaSet and Deployment. This is the backend process when a Deployment is deleted.
+
+```bash
+kubectl scale deploy/dev-web --replicas=4
+deployment "dev-web" scaled
+
+kubectl get deployments
+NAME     READY   UP-TO-DATE  AVAILABLE  AGE
+dev-web  4/4     4           4          20s
+```
+
+Non-immutable values can be edited via a text editor, as well. Use edit to trigger an update. For example, to change the deployed version of the nginx web server to an older version: 
+
+```bash
+kubectl edit deployment nginx
+....
+  containers:
+  - image: nginx:1.8 #<<---Set to an older version 
+    imagePullPolicy: IfNotPresent
+    name: dev-web
+....
+```
+
+This would trigger a rolling update of the deployment. While the deployment would show an older age, a review of the Pods would show a recent update and older version of the web server application deployed.
+
+### Deployment Rollbacks
+
+With some of the previous ReplicaSets of a Deployment being kept, you can also roll back to a previous revision by scaling up and down. The number of previous configurations kept is configurable, and has changed from version to version. Next, we will have a closer look at rollbacks, using the --record option of the kubectl create command, which allows annotation in the resource definition.
+
+```bash
+kubectl create deploy ghost --image=ghost --record
+
+kubectl get deployments ghost -o yaml
+
+deployment.kubernetes.io/revision: "1" 
+kubernetes.io/change-cause: kubectl create deploy ghost --image=ghost --record
+```
+
+
+Should an update fail, due to an improper image version, for example, you can roll back the change to a working version with kubectl rollout undo:
+
+```bash
+kubectl set image deployment/ghost ghost=ghost:09 --all
+
+kubectl rollout history deployment/ghost deployments "ghost":
+REVISION   CHANGE-CAUSE
+1 ​         kubectl create deploy ghost --image=ghost --record
+2          kubectl set image deployment/ghost ghost=ghost:09 --all
+
+kubectl get pods
+NAME                    READY  STATUS            RESTARTS  AGE
+ghost-2141819201-tcths  0/1    ImagePullBackOff  0         1m​
+
+kubectl rollout undo deployment/ghost ; kubectl get pods
+
+NAME                    READY  STATUS   RESTARTS  AGE
+ghost-3378155678-eq5i6  1/1    Running  0         7s
+```
+
+You can roll back to a specific revision with the --to-revision=2 option.
+
+You can also edit a Deployment using the kubectl edit command.
+
+You can also pause a Deployment, and then resume.
+
+```bash
+kubectl rollout pause deployment/ghost
+
+kubectl rollout resume deployment/ghost
+```
+
+**note**  you can still do a rolling update on ReplicationControllers with the kubectl rolling-update command, but this is done on the client side. Hence, if you close your client, the rolling update will stop.
+
+
+## Using DaemonSets
+
+A newer object to work with is the DaemonSet. This controller ensures that a single pod exists on each node in the cluster. Every Pod uses the same image. Should a new node be added, the DaemonSet controller will deploy a new Pod on your behalf. Should a node be removed, the controller will delete the Pod also. 
+
+The use of a DaemonSet allows for ensuring a particular container is always running. In a large and dynamic environment, it can be helpful to have a logging or metric generation application on every node without an administrator remembering to deploy that application. 
+
+Use `kind: DaemonSet`.​
+
+There are ways of effecting the kube-apischeduler such that some nodes will not run a DaemonSet.
+
+## Labels
+
+Part of the metadata of an object is a label. Though labels are not API objects, they are an important tool for cluster administration. They can be used to select an object based on an arbitrary string, regardless of the object type. Labels are immutable as of API version apps/v1.
+
+Usually you add the labels in the deployment.yaml file that you create.  But you can also make them on the fly 
+
+```bash
+kubectl label pods ghost-3378155678-eq5i6 foo=bar
+
+kubectl get pods --show-labels
+NAME                    READY  STATUS   RESTARTS  AGE  LABELS
+ghost-3378155678-eq5i6  1/1    Running  0         11m  foo=bar, pod-template-hash=3378155678,run=ghost
+```
+
+## Lab 7
+
+**TODO**
+
+
+## Quiz Questions 
+
+* What Deployment value determines the number of duplicate Pods deployed? *Replicas*
+
+* Which of the following is a header value having to do with updating Pods? **strategy**
+
+* Which of the following metadata is used to select an object with kubectl, based on an arbitrary string, regardless of the object type? *label*
+
+* Which of the following arguments do we pass to the kubectl rollout command to view object revisions? **history**
+
+* What argument do we pass to the kubectl rollout command in order to return to a previous version? *undo*
