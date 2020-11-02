@@ -36,9 +36,9 @@ They are using putty which is super cringe.
 
 * [Managing State with Deployments]
 
-* [Services]
-
 * [Volumes and Data]
+
+* [Services]
 
 * [Ingress]
 
